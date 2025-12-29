@@ -1,0 +1,7 @@
+version: "3"
+services:
+    app:
+        image: busybox
+        command: ["/bin/busybox", "sh", "-c", "echo $${OUTPUT:-None}"]
+        environment:
+            OUTPUT: Zero

@@ -1,0 +1,8 @@
+services:
+    dep_b:
+        image: busybox
+        command: ["/bin/busybox", "sleep", "5"]
+    app:
+        depends_on: !override
+            dep_b:
+                condition: service_started

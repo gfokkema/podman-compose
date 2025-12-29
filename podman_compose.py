@@ -1506,22 +1506,22 @@ class OverrideTag(yaml.YAMLObject):
 
     def __init__(self, value: Any) -> None:
         self.value: dict[Any, Any] | list[Any]  # type: ignore[no-redef]
-        if len(value) > 0 and isinstance(value[0], tuple):
+        if isinstance(value, dict):
             self.value = {}
-            # item is a tuple representing service's lower level key and value
-            for item in value:
-                # value can actually be a list, then all the elements from the list have to be
-                # collected
-                if isinstance(item[1].value, list):
-                    self.value[item[0].value] = [i.value for i in item[1].value]  # type: ignore[index]
-                else:
-                    self.value[item[0].value] = item[1].value  # type: ignore[index]
+            for k, v in value.items():
+                self.value[k] = v
         else:
             self.value = [item.value for item in value]  # type: ignore[union-attr]
 
     @classmethod
     def from_yaml(cls, loader: Any, node: Any) -> OverrideTag:
-        return OverrideTag(node.value)
+        values = {}
+        for k, v in node.value:
+            if isinstance(v.value, list):
+                values[k.value] = {opt.value: val.value for opt, val in v.value}
+            else:
+                values[k.value] = v.value
+        return OverrideTag(values)
 
     @classmethod
     def to_yaml(cls, dumper: Any, data: OverrideTag) -> str:
@@ -1841,7 +1841,10 @@ def normalize_service(service: dict[str, Any], sub_dir: str = "") -> dict[str, A
     for key in ("environment", "labels"):
         if key not in service:
             continue
-        service[key] = norm_as_dict(service[key])
+        if isinstance(service[key], OverrideTag):
+            service[key] = OverrideTag(norm_as_dict(service[key].value))
+        else:
+            service[key] = norm_as_dict(service[key])
     if "extends" in service:
         extends = service["extends"]
         if isinstance(extends, str):
@@ -1850,7 +1853,7 @@ def normalize_service(service: dict[str, Any], sub_dir: str = "") -> dict[str, A
     if "depends_on" in service:
         # deps should become a dictionary of dependencies
         deps = service["depends_on"]
-        if isinstance(deps, ResetTag):
+        if isinstance(deps, (ResetTag, OverrideTag)):
             return service
         if isinstance(deps, str):
             deps = {deps: {}}
