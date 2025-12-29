@@ -1,0 +1,10 @@
+version: "3"
+services:
+    dep_a:
+        image: busybox
+        command: ["/bin/busybox", "sleep", "5"]
+    app:
+        image: busybox
+        command: ["/bin/busybox", "echo", "One"]
+        depends_on:
+            dep_a: {}

@@ -1,0 +1,7 @@
+services:
+    dep_b:
+        image: busybox
+        command: ["/bin/busybox", "sleep", "5"]
+    app:
+        depends_on:
+            dep_b: {}

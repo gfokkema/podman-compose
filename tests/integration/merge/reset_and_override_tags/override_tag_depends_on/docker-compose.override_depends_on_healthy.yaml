@@ -1,0 +1,8 @@
+services:
+    dep_a:
+        healthcheck:
+            test: "true"
+    app:
+        depends_on: !override
+            dep_a:
+                condition: service_healthy
